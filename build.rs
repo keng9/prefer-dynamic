@@ -39,7 +39,14 @@ fn main() {
 	lib_path.push(toolchain);
 
 	let mut found = false;
-	for lib_path in [lib_path.join("lib"), lib_path.join("bin")] {
+	let search_paths = [
+		lib_path.join("lib"),
+		lib_path.join("bin"),
+		lib_path.join("lib/rustlib/x86_64-apple-darwin/lib"),
+		lib_path.join("lib/rustlib/aarch64-apple-darwin/lib"),
+	];
+
+	for lib_path in search_paths {
 		if !lib_path.is_dir() {
 			continue;
 		}
@@ -63,11 +70,11 @@ fn main() {
 			if let Some(os_file_name) = lib.file_name() {
 				let file_name = os_file_name.to_string_lossy();
 				let file_name = file_name.strip_prefix("lib").unwrap_or_else(|| file_name.as_ref());
-				if file_name.starts_with("std-") {
+				if file_name.contains("std-") || file_name.starts_with("std-") {
 					found = true;
 					std::fs::copy(&lib, target_dir.join(os_file_name))
 						.expect("Failed to copy std lib to target directory");
-				} else if cfg!(feature = "link-test") && file_name.starts_with("test-") {
+				} else if cfg!(feature = "link-test") && (file_name.contains("test-") || file_name.starts_with("test-")) {
 					found = true;
 					std::fs::copy(&lib, target_dir.join(os_file_name))
 						.expect("Failed to copy test lib to target directory");
